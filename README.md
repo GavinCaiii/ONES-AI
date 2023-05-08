@@ -1,2 +1,3 @@
 # ONES-AI
-ONES AI小助手
+
+### 基于https://github.com/GaiZhenbiao/ChuanhuChatGPT
