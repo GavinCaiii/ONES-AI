@@ -115,10 +115,9 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                         value=INITIAL_SYSTEM_PROMPT,
                         lines=10,
                     ).style(container=False)
-
+                    
                     # 上传文件
                     index_files = gr.Files(label=i18n("上传"), type="file")
-                    
                     with gr.Accordion(label=i18n("加载Prompt模板"), open=True, visible=False):
                         with gr.Column():
                             with gr.Row():
