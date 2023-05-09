@@ -67,7 +67,6 @@ ONLINE_MODELS = [
     "gpt-4-0314",
     "gpt-4-32k",
     "gpt-4-32k-0314",
-    "xmchat",
 ]
 
 LOCAL_MODELS = [
@@ -85,7 +84,8 @@ LOCAL_MODELS = [
 if os.environ.get('HIDE_LOCAL_MODELS', 'false') == 'true':
     MODELS = ONLINE_MODELS
 else:
-    MODELS = ONLINE_MODELS + LOCAL_MODELS
+    MODELS = ONLINE_MODELS
+    # MODELS = ONLINE_MODELS + LOCAL_MODELS
 
 DEFAULT_MODEL = 0
 

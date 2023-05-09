@@ -34,6 +34,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
     topic = gr.State(i18n("未命名对话历史记录"))
 
     with gr.Row():
+        # 标题
         gr.HTML(CHUANHU_TITLE, elem_id="app_title")
         status_display = gr.Markdown(get_geoip(), elem_id="status_display")
     with gr.Row(elem_id="float_display"):
@@ -67,7 +68,9 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
 
         with gr.Column():
             with gr.Column(min_width=50, scale=1):
-                with gr.Tab(label=i18n("模型")):
+                
+                with gr.Tab(label=i18n("配置")):
+                    gr.HTML(APPEARANCE_SWITCHER, elem_classes="insert_block")
                     keyTxt = gr.Textbox(
                         show_label=True,
                         placeholder=f"Your API-key...",
@@ -86,7 +89,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                     lora_select_dropdown = gr.Dropdown(
                         label=i18n("选择LoRA模型"), choices=[], multiselect=False, interactive=True, visible=False
                     )
-                    with gr.Row():
+                    with gr.Row(visible=False):
                         use_streaming_checkbox = gr.Checkbox(
                             label=i18n("实时传输回答"), value=True, visible=ENABLE_STREAMING_OPTION
                         )
@@ -96,15 +99,13 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                             label=i18n("渲染LaTeX公式"), value=render_latex, interactive=True, elem_id="render_latex_checkbox"
                         )
                     language_select_dropdown = gr.Dropdown(
+                        visible=False,
                         label=i18n("选择回复语言（针对搜索&索引功能）"),
                         choices=REPLY_LANGUAGES,
                         multiselect=False,
                         value=REPLY_LANGUAGES[0],
                     )
-                    index_files = gr.Files(label=i18n("上传"), type="file")
-                    two_column = gr.Checkbox(label=i18n("双栏pdf"), value=advance_docs["pdf"].get("two_column", False))
-                    # TODO: 公式ocr
-                    # formula_ocr = gr.Checkbox(label=i18n("识别公式"), value=advance_docs["pdf"].get("formula_ocr", False))
+
 
                 with gr.Tab(label="Prompt"):
                     systemPromptTxt = gr.Textbox(
@@ -114,7 +115,11 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                         value=INITIAL_SYSTEM_PROMPT,
                         lines=10,
                     ).style(container=False)
-                    with gr.Accordion(label=i18n("加载Prompt模板"), open=True):
+
+                    # 上传文件
+                    index_files = gr.Files(label=i18n("上传"), type="file")
+                    
+                    with gr.Accordion(label=i18n("加载Prompt模板"), open=True, visible=False):
                         with gr.Column():
                             with gr.Row():
                                 with gr.Column(scale=6):
@@ -136,38 +141,8 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                                         multiselect=False,
                                     ).style(container=False)
 
-                with gr.Tab(label=i18n("保存/加载")):
-                    with gr.Accordion(label=i18n("保存/加载对话历史记录"), open=True):
-                        with gr.Column():
-                            with gr.Row():
-                                with gr.Column(scale=6):
-                                    historyFileSelectDropdown = gr.Dropdown(
-                                        label=i18n("从列表中加载对话"),
-                                        choices=get_history_names(plain=True),
-                                        multiselect=False
-                                    )
-                                with gr.Column(scale=1):
-                                    historyRefreshBtn = gr.Button(i18n("🔄 刷新"))
-                            with gr.Row():
-                                with gr.Column(scale=6):
-                                    saveFileName = gr.Textbox(
-                                        show_label=True,
-                                        placeholder=i18n("设置文件名: 默认为.json，可选为.md"),
-                                        label=i18n("设置保存文件名"),
-                                        value=i18n("对话历史记录"),
-                                    ).style(container=True)
-                                with gr.Column(scale=1):
-                                    saveHistoryBtn = gr.Button(i18n("💾 保存对话"))
-                                    exportMarkdownBtn = gr.Button(i18n("📝 导出为Markdown"))
-                                    gr.Markdown(i18n("默认保存于history文件夹"))
-                            with gr.Row():
-                                with gr.Column():
-                                    downloadFile = gr.File(interactive=True)
-
-                with gr.Tab(label=i18n("高级")):
-                    gr.Markdown(i18n("# ⚠️ 务必谨慎更改 ⚠️\n\n如果无法使用请恢复默认设置"))
-                    gr.HTML(APPEARANCE_SWITCHER, elem_classes="insert_block")
-                    with gr.Accordion(i18n("参数"), open=False):
+                with gr.Tab(label=i18n("调参")):
+                    # gr.Markdown(i18n("# ⚠️ 务必谨慎更改 ⚠️\n\n如果无法使用请恢复默认设置"))
                         temperature_slider = gr.Slider(
                             minimum=-0,
                             maximum=2.0,
@@ -246,25 +221,39 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                             lines=1,
                         )
 
-                    with gr.Accordion(i18n("网络设置"), open=False):
-                        # 优先展示自定义的api_host
-                        apihostTxt = gr.Textbox(
-                            show_label=True,
-                            placeholder=i18n("在这里输入API-Host..."),
-                            label="API-Host",
-                            value=config.api_host or shared.API_HOST,
-                            lines=1,
-                        )
-                        changeAPIURLBtn = gr.Button(i18n("🔄 切换API地址"))
-                        proxyTxt = gr.Textbox(
-                            show_label=True,
-                            placeholder=i18n("在这里输入代理地址..."),
-                            label=i18n("代理地址（示例：http://127.0.0.1:10809）"),
-                            value="",
-                            lines=2,
-                        )
-                        changeProxyBtn = gr.Button(i18n("🔄 设置代理地址"))
-                        default_btn = gr.Button(i18n("🔙 恢复默认设置"))
+                with gr.Tab(label=i18n("保存/加载")):
+                    with gr.Accordion(label=i18n("保存/加载对话历史记录"), open=True):
+                        with gr.Column():
+                            with gr.Row():
+                                with gr.Column(scale=6):
+                                    historyFileSelectDropdown = gr.Dropdown(
+                                        label=i18n("从列表中加载对话"),
+                                        choices=get_history_names(plain=True),
+                                        multiselect=False
+                                    )
+                                with gr.Column(scale=1):
+                                    historyRefreshBtn = gr.Button(i18n("🔄 刷新"))
+                            with gr.Row():
+                                with gr.Column(scale=6):
+                                    saveFileName = gr.Textbox(
+                                        show_label=True,
+                                        placeholder=i18n("设置文件名: 默认为.json，可选为.md"),
+                                        label=i18n("设置保存文件名"),
+                                        value=i18n("对话历史记录"),
+                                    ).style(container=True)
+                                with gr.Column(scale=1):
+                                    saveHistoryBtn = gr.Button(i18n("💾 保存对话"))
+                                    exportMarkdownBtn = gr.Button(i18n("📝 导出为Markdown"))
+                                    gr.Markdown(i18n("默认保存于history文件夹"))
+                            with gr.Row():
+                                with gr.Column():
+                                    downloadFile = gr.File(interactive=True)
+
+                
+                    two_column = gr.Checkbox(label=i18n("双栏pdf"), value=advance_docs["pdf"].get("two_column", False))
+                    # TODO: 公式ocr
+                    # formula_ocr = gr.Checkbox(label=i18n("识别公式"), value=advance_docs["pdf"].get("formula_ocr", False))
+                
 
     gr.Markdown(CHUANHU_DESCRIPTION, elem_id="description")
     gr.HTML(FOOTER.format(versions=versions_html()), elem_id="footer")
@@ -442,21 +431,6 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
     logit_bias_txt.change(set_logit_bias, [current_model, logit_bias_txt], None)
     user_identifier_txt.change(set_user_identifier, [current_model, user_identifier_txt], None)
 
-    default_btn.click(
-        reset_default, [], [apihostTxt, proxyTxt, status_display], show_progress=True
-    )
-    changeAPIURLBtn.click(
-        change_api_host,
-        [apihostTxt],
-        [status_display],
-        show_progress=True,
-    )
-    changeProxyBtn.click(
-        change_proxy,
-        [proxyTxt],
-        [status_display],
-        show_progress=True,
-    )
 
 logging.info(
     colorama.Back.GREEN
