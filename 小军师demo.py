@@ -4,7 +4,7 @@ import configparser
 
 
 # 从ini文件中读取api_key
-openai.api_key = "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"
+openai.api_key = "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"
 
 doc = docx.Document("/Users/long/Desktop/小军师-效能测试数据.docx")
 text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
