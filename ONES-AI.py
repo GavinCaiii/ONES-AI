@@ -17,6 +17,12 @@ gr.Chatbot._postprocess_chat_messages = postprocess_chat_messages
 gr.Chatbot.postprocess = postprocess
 PromptHelper.compact_text_chunks = compact_text_chunks
 
+# 上传文件后的回调函数
+def on_file_upload_callback(files):
+    print("文件名：", files.name)
+    print("文件内容：", files.read().decode("utf-8"))
+
+
 with open("assets/custom.css", "r", encoding="utf-8") as f:
     customCSS = f.read()
 
@@ -46,6 +52,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                 chatbot = gr.Chatbot(label="Chuanhu Chat", elem_id="chuanhu_chatbot").style(height="100%")
             with gr.Row():
                 with gr.Column(min_width=225, scale=12):
+                    # 输入问题
                     user_input = gr.Textbox(
                         elem_id="user_input_tb",
                         show_label=False, placeholder=i18n("在这里输入")
@@ -86,9 +93,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                     model_select_dropdown = gr.Dropdown(
                         label=i18n("选择模型"), choices=MODELS, multiselect=False, value=MODELS[DEFAULT_MODEL], interactive=True
                     )
-                    lora_select_dropdown = gr.Dropdown(
-                        label=i18n("选择LoRA模型"), choices=[], multiselect=False, interactive=True, visible=False
-                    )
+
                     with gr.Row(visible=False):
                         use_streaming_checkbox = gr.Checkbox(
                             label=i18n("实时传输回答"), value=True, visible=ENABLE_STREAMING_OPTION
@@ -114,34 +119,15 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                         label="System prompt",
                         value=INITIAL_SYSTEM_PROMPT,
                         lines=10,
+                        
                     ).style(container=False)
                     
                     # 上传文件
-                    index_files = gr.Files(label=i18n("上传"), type="file")
-                    with gr.Accordion(label=i18n("加载Prompt模板"), open=True, visible=False):
-                        with gr.Column():
-                            with gr.Row():
-                                with gr.Column(scale=6):
-                                    templateFileSelectDropdown = gr.Dropdown(
-                                        label=i18n("选择Prompt模板集合文件"),
-                                        choices=get_template_names(plain=True),
-                                        multiselect=False,
-                                        value=get_template_names(plain=True)[0],
-                                    ).style(container=False)
-                                with gr.Column(scale=1):
-                                    templateRefreshBtn = gr.Button(i18n("🔄 刷新"))
-                            with gr.Row():
-                                with gr.Column():
-                                    templateSelectDropdown = gr.Dropdown(
-                                        label=i18n("从Prompt模板中加载"),
-                                        choices=load_template(
-                                            get_template_names(plain=True)[0], mode=1
-                                        ),
-                                        multiselect=False,
-                                    ).style(container=False)
+                    index_files = gr.Files(label=i18n("上传"), type="file", on_upload=on_file_upload_callback)
+                
 
                 with gr.Tab(label=i18n("调参")):
-                    # gr.Markdown(i18n("# ⚠️ 务必谨慎更改 ⚠️\n\n如果无法使用请恢复默认设置"))
+                
                         temperature_slider = gr.Slider(
                             minimum=-0,
                             maximum=2.0,
@@ -269,6 +255,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
         chatbot = gr.Chatbot.update(label=MODELS[DEFAULT_MODEL])
         return user_info, user_name, current_model, toggle_like_btn_visibility(DEFAULT_MODEL), *current_model.auto_load(), get_history_names(False, user_name), chatbot
     demo.load(create_greeting, inputs=None, outputs=[user_info, user_name, current_model, like_dislike_area, systemPromptTxt, chatbot, historyFileSelectDropdown, chatbot], api_name="load")
+
     chatgpt_predict_args = dict(
         fn=predict,
         inputs=[
@@ -320,6 +307,7 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
     user_input.submit(**transfer_input_args).then(**chatgpt_predict_args).then(**end_outputing_args)
     user_input.submit(**get_usage_args)
 
+    # 提交问题
     submitBtn.click(**transfer_input_args).then(**chatgpt_predict_args, api_name="predict").then(**end_outputing_args)
     submitBtn.click(**get_usage_args)
 
@@ -380,25 +368,11 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
     keyTxt.change(set_key, [current_model, keyTxt], [user_api_key, status_display], api_name="set_key").then(**get_usage_args)
     keyTxt.submit(**get_usage_args)
     single_turn_checkbox.change(set_single_turn, [current_model, single_turn_checkbox], None)
-    model_select_dropdown.change(get_model, [model_select_dropdown, lora_select_dropdown, user_api_key, temperature_slider, top_p_slider, systemPromptTxt, user_name], [current_model, status_display, chatbot, lora_select_dropdown], show_progress=True, api_name="get_model")
+    model_select_dropdown.change(get_model, [model_select_dropdown, user_api_key, temperature_slider, top_p_slider, systemPromptTxt, user_name], [current_model, status_display, chatbot], show_progress=True, api_name="get_model")
     model_select_dropdown.change(toggle_like_btn_visibility, [model_select_dropdown], [like_dislike_area], show_progress=False)
-    lora_select_dropdown.change(get_model, [model_select_dropdown, lora_select_dropdown, user_api_key, temperature_slider, top_p_slider, systemPromptTxt, user_name], [current_model, status_display, chatbot], show_progress=True)
 
     # Template
     systemPromptTxt.change(set_system_prompt, [current_model, systemPromptTxt], None)
-    templateRefreshBtn.click(get_template_names, None, [templateFileSelectDropdown])
-    templateFileSelectDropdown.change(
-        load_template,
-        [templateFileSelectDropdown],
-        [promptTemplates, templateSelectDropdown],
-        show_progress=True,
-    )
-    templateSelectDropdown.change(
-        get_template_content,
-        [promptTemplates, templateSelectDropdown, systemPromptTxt],
-        [systemPromptTxt],
-        show_progress=True,
-    )
 
     # S&L
     saveHistoryBtn.click(
